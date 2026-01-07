@@ -1,0 +1,58 @@
+# Common Tomcat configuration across all environments
+image:
+  registry: docker.io
+  repository: bitnami/tomcat
+  tag: "10.1.18"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+commonLabels:
+  app: tomcat
+  managed-by: argocd
+
+commonAnnotations:
+  team: platform
+  
+ingress:
+  enabled: false
+  ingressClassName: nginx
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 250m
+  limits:
+    memory: 512Mi
+    cpu: 500m
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+persistence:
+  enabled: false
+
+volumePermissions:
+  enabled: false
+
+containerPorts:
+  http: 8080
