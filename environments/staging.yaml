@@ -1,0 +1,45 @@
+# Staging environment configuration
+replicaCount: 2
+
+image:
+  tag: "10.1.18-debian-12-r0"
+
+tomcatUsername: admin
+tomcatPassword: staging-password-456
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 250m
+  limits:
+    memory: 512Mi
+    cpu: 500m
+
+persistence:
+  enabled: true
+  size: 3Gi
+  storageClass: standard
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  hostname: tomcat-staging.example.com
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+extraEnvVars:
+  - name: ENVIRONMENT
+    value: "staging"
+  - name: JAVA_OPTS
+    value: "-Xms256m -Xmx512m -XX:+UseG1GC"
+  - name: CATALINA_OPTS
+    value: "-Denv=staging"
+
+podAnnotations:
+  environment: staging
+  version: "1.0.0"
