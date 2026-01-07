@@ -1,0 +1,70 @@
+# Production environment configuration
+replicaCount: 3
+
+image:
+  tag: "10.1.18-debian-12-r0"
+
+tomcatUsername: admin
+# Use existing secret for production
+existingSecret: tomcat-prod-credentials
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 500m
+  limits:
+    memory: 1Gi
+    cpu: 1000m
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: gp3
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  hostname: tomcat.example.com
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - tomcat
+          topologyKey: kubernetes.io/hostname
+
+extraEnvVars:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: JAVA_OPTS
+    value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+  - name: CATALINA_OPTS
+    value: "-Denv=prod -Dspring.profiles.active=prod"
+
+podAnnotations:
+  environment: prod
+  version: "1.0.0"
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
